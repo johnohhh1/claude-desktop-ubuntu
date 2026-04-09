@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+# Source shared launcher library
+source "/usr/lib/claude-desktop/launcher-common.sh"
+
+# Handle --doctor flag before anything else
+if [[ "${1:-}" == '--doctor' ]]; then
+	local_electron_path="/usr/lib/claude-desktop/node_modules/electron/dist/electron"
+	run_doctor "$local_electron_path"
+	exit $?
+fi
+
+# Setup logging and environment
+setup_logging || exit 1
+setup_electron_env
+cleanup_orphaned_cowork_daemon
+cleanup_stale_lock
+cleanup_stale_cowork_socket
+
+# Log startup info
+log_message '--- Claude Desktop Launcher Start ---'
+log_message "Timestamp: $(date)"
+log_message "Arguments: $@"
+
+# Check for display
+if ! check_display; then
+	log_message 'No display detected (TTY session)'
+	echo 'Error: Claude Desktop requires a graphical desktop environment.' >&2
+	echo 'Please run from within an X11 or Wayland session, not from a TTY.' >&2
+	exit 1
+fi
+
+# Detect display backend
+detect_display_backend
+if [[ $is_wayland == true ]]; then
+	log_message 'Wayland detected'
+fi
+
+# Determine Electron executable path
+electron_exec='electron'
+local_electron_path="/usr/lib/claude-desktop/node_modules/electron/dist/electron"
+if [[ -f $local_electron_path ]]; then
+	electron_exec="$local_electron_path"
+	log_message "Using local Electron: $electron_exec"
+else
+	if command -v electron &> /dev/null; then
+		log_message "Using global Electron: $electron_exec"
+	else
+		log_message 'Error: Electron executable not found'
+		if command -v zenity &> /dev/null; then
+			zenity --error \
+				--text='Claude Desktop cannot start because the Electron framework is missing.'
+		elif command -v kdialog &> /dev/null; then
+			kdialog --error \
+				'Claude Desktop cannot start because the Electron framework is missing.'
+		fi
+		exit 1
+	fi
+fi
+
+# App path
+app_path="/usr/lib/claude-desktop/node_modules/electron/dist/resources/app.asar"
+
+# Build electron args
+build_electron_args 'deb'
+
+# Add app path LAST
+electron_args+=("$app_path")
+
+# Change to application directory
+app_dir="/usr/lib/claude-desktop"
+log_message "Changing directory to $app_dir"
+cd "$app_dir" || { log_message "Failed to cd to $app_dir"; exit 1; }
+
+# Execute Electron
+log_message "Executing: $electron_exec ${electron_args[*]} $*"
+"$electron_exec" "${electron_args[@]}" "$@" >> "$log_file" 2>&1
+exit_code=$?
+log_message "Electron exited with code: $exit_code"
+log_message '--- Claude Desktop Launcher End ---'
+exit $exit_code
