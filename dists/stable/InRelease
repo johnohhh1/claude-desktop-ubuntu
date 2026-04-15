@@ -1,0 +1,33 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Origin: johnohhh1
+Label: claude-desktop-ubuntu
+Suite: stable
+Codename: stable
+Architectures: amd64
+Components: main
+Description: Unofficial Claude Desktop for Ubuntu apt repository
+Date: Wed, 15 Apr 2026 21:46:30 +0000
+MD5Sum:
+ 1d6788582f3720bd9ba9ab5e8acbe315              746 dists/stable/main/binary-amd64/Packages
+ 634248b1b9d149d05aefb2fb1444ec07              520 dists/stable/main/binary-amd64/Packages.gz
+SHA256:
+ 8034689b1be15381817f797b9526786817538fd7897b94e816452cde2a6b5078              746 dists/stable/main/binary-amd64/Packages
+ d33f79fe2aaf52cc50612d976793d084e0b5b4b0ba272122a21101365ae80b92              520 dists/stable/main/binary-amd64/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEqWj00T7gmAufkuj1hjUpviI7HmgFAmngBzYACgkQhjUpviI7
+Hmjl3A/+I6iris9nxUHyRHfHW6aVMKVN6ccOhFp+OdOKOJh+q5mT5IP3C1sAYZTE
+vPUJztzmPuUfVAxvr2QaT0yvs7OHTRtQWLtFymI2GkNkcV1WNIxQil7bCbeZ/3bP
+zSU5gfGd+O+wb4wyPjtzGhfmpqBF/s1ga56pvNTuxCH+6S8XcHa9BT9mzboKM8m1
+qTMKrXBxq12CaWL8KBvPXdh/qHX20qauVR0EKmJuCP+d7p5fz0TV9J9+97DV0WoI
+r1Lm3irKZ3g75LNM8yF5THa6hBUmBJiA1FcRSyTYaci6MtYvOCUkAbB1BXGArYTQ
+K+1ESG0Pg8OyMX8lM6EuG8gftIQLRBgxDNT2jqxJ/kKXMJu77p0Urb9qA/1plEnN
+4Z7o1XqTnJsMIxv6zqnbiQQmjcVit4dfmwjJyVdNHgMrLVEtYg3F3ckFHbYtqUSd
+6ePIi8HnA1B7BDYlvtQLAB2AijOXiimCaIa+56K8E00PCAGPaWSF8kawVN5KSgd6
+FxDeNA3RbeHlcTzh+I/cdEcMAbZdoWyb5ZhZKuwXCu4ibu2FeIn9+WY7TQLi10E8
+pwyIxG1qr3SqYPuWVk7vPL35UgdgYaNkKwzXGFMtPAkF/8zdePnyRYLIUSfhHMEv
+HdwieQxJ+N4c/0ZV8Fb7Ig8TWD5hCGsRwlNyGMWn/lmARILZR/E=
+=M/Ux
+-----END PGP SIGNATURE-----

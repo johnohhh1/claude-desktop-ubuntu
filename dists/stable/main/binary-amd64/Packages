@@ -1,0 +1,19 @@
+Package: claude-desktop
+Version: 1.2773.0-0
+Architecture: amd64
+Maintainer: johnohhh1
+Depends: libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libsecret-1-0
+Recommends: bubblewrap, socat
+Suggests: qemu-system-x86, virtiofsd
+Filename: pool/main/claude-desktop_1.2773.0-0_amd64.deb
+Size: 94374174
+MD5sum: 32fde645e33f3626509d9b9647d46a10
+SHA1: e452fe713672a74db609f23f58f49184410ea763
+SHA256: 35ecd348d83fbf3605bcf849ec60861af1d1e861698615f2e1468a855929329c
+Section: utils
+Priority: optional
+Description: Claude Desktop for Linux
+ Anthropic's Claude Desktop application repackaged for Ubuntu Linux.
+ Includes Wayland support, XWayland fallback, Linux-native claude-native
+ stub, and comprehensive diagnostic tooling.
+

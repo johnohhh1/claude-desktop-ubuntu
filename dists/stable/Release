@@ -1,0 +1,14 @@
+Origin: johnohhh1
+Label: claude-desktop-ubuntu
+Suite: stable
+Codename: stable
+Architectures: amd64
+Components: main
+Description: Unofficial Claude Desktop for Ubuntu apt repository
+Date: Wed, 15 Apr 2026 21:46:30 +0000
+MD5Sum:
+ 1d6788582f3720bd9ba9ab5e8acbe315              746 dists/stable/main/binary-amd64/Packages
+ 634248b1b9d149d05aefb2fb1444ec07              520 dists/stable/main/binary-amd64/Packages.gz
+SHA256:
+ 8034689b1be15381817f797b9526786817538fd7897b94e816452cde2a6b5078              746 dists/stable/main/binary-amd64/Packages
+ d33f79fe2aaf52cc50612d976793d084e0b5b4b0ba272122a21101365ae80b92              520 dists/stable/main/binary-amd64/Packages.gz
