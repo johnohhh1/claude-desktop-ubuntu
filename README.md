@@ -6,115 +6,64 @@
 
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-26.04%20tested-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com/)
 [![Linux](https://img.shields.io/badge/Linux-x86__64-333333?logo=linux&logoColor=white)](https://kernel.org/)
-[![Wayland](https://img.shields.io/badge/Display-Wayland%20%2F%20X11-1793D1)](#features)
+[![Wayland](https://img.shields.io/badge/Display-Wayland%20%2F%20X11-1793D1)](#wayland--x11)
 [![Cowork](https://img.shields.io/badge/Cowork-Supported-8A2BE2)](#cowork-support)
 [![Deb Package](https://img.shields.io/badge/Package-.deb-0A66C2)](#build)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Works%20on%20Ubuntu%20Linux-2EA44F)](#what-this-is)
 
-**Not a wrapper. Not a web view.** This repackages the official Anthropic Windows binary — the same app Windows and macOS users get — and runs it natively on Ubuntu Linux with Wayland support, proper desktop integration, a full Linux-native `@ant/claude-native` implementation, and **Cowork mode**.
+**Not a wrapper. Not a web view.** This takes the official Anthropic Windows MSIX, swaps in Linux-native stubs, adds Cowork support via [claude-cowork-linux](https://github.com/johnzfitch/claude-cowork-linux), and packages it as a `.deb`.
 
-Built and tested on Ubuntu 26.04 "Noble" with kernel 7.0, RTX 5070, NVIDIA driver 580, both X11 and Wayland (via XWayland).
+Tested on Ubuntu 26.04, kernel 7.0, NVIDIA RTX 5070, driver 580.
 
-**Tags:** `claude-desktop` `ubuntu` `linux` `electron` `wayland` `x11` `cowork` `deb` `anthropic` `desktop-app` `msix`
+**Tags:** `claude-desktop` `ubuntu` `linux` `cowork` `wayland` `electron` `deb` `msix`
+
+---
 
 ## Quick Jump
 
-- [What This Is](#what-this-is)
-- [What The Build Does](#what-the-build-does)
-- [Features](#features)
-- [Cowork Support](#cowork-support)
-- [Prerequisites](#prerequisites)
-- [Build](#build)
-- [Install](#install)
-- [Launch](#launch)
-- [Environment Variables](#environment-variables)
-- [Diagnostics](#diagnostics)
-- [Known Limitations](#known-limitations)
-- [How It Differs From Other Linux Ports](#how-it-differs-from-other-linux-ports)
-- [Related Projects](#related-projects)
-- [License](#license)
+[Build](#build) | [Install](#install) | [Cowork](#cowork-support) | [Wayland](#wayland--x11) | [Doctor](#diagnostics) | [Limitations](#known-limitations) | [Credits](#credits)
 
-## What This Is
+---
 
-Anthropic ships Claude Desktop for macOS and Windows. Linux gets Claude Code (terminal) but no desktop app. This project extracts the official Windows MSIX package, replaces platform-specific components with Linux equivalents, and produces a proper `.deb` package you can install, update, and uninstall like any other system package.
+## What It Does
 
-## What The Build Does
+The build script (`build-deb.sh`) takes a Windows MSIX and produces a `.deb`:
 
-1. Extracts the official Claude Desktop Windows MSIX bundle
-2. Pulls out the `app.asar` (the real app logic — untouched)
-3. Replaces `@ant/claude-native` with a Linux stub that uses Electron's native Linux APIs
-4. Integrates [claude-cowork-linux](https://github.com/johnzfitch/claude-cowork-linux) stubs for Cowork support (`@ant/claude-swift` stub + platform gate patch)
-5. Adds a launcher with Wayland/X11 detection and XWayland fallback
-6. Adds cleanup logic for stale locks, orphaned cowork daemons, and stale sockets
-7. Includes a `--doctor` diagnostic command
-8. Packages everything as a proper `.deb` — `claude-desktop`
+1. Extracts the MSIX (handles `.exe`, `.msix`, `.msixbundle`)
+2. Pulls `app.asar` — the actual Electron app, untouched
+3. Drops in a Linux `@ant/claude-native` stub (progress bar, flash frame, maximize detection via Electron's native APIs)
+4. Clones [claude-cowork-linux](https://github.com/johnzfitch/claude-cowork-linux), installs its `@ant/claude-swift` stub and cowork helpers into the asar, patches the platform gate
+5. Adds a bash launcher with display server detection and stale process cleanup
+6. Packages icons, `.desktop` entry, and a `--doctor` diagnostic tool
 
-## Features
+## Build
 
-- **Wayland support** — auto-detects Wayland, falls back to X11 via XWayland for global hotkey support. Set `CLAUDE_USE_WAYLAND=1` for native Wayland mode.
-- **Niri auto-detection** — compositor with no XWayland support is auto-forced to native Wayland.
-- **`@ant/claude-native` Linux stub** — replaces the Windows/macOS native module with functional Linux equivalents (progress bar, flash frame, maximize detection) instead of silent no-ops.
-- **Cowork mode** — runs Cowork directly on the host, no VM needed. See [Cowork Support](#cowork-support).
-- **Stale lock cleanup** — automatically removes orphaned SingletonLock files from crashes.
-- **Cowork daemon management** — detects and kills orphaned `cowork-vm-service` daemons that block relaunches.
-- **`--doctor` diagnostics** — run `claude-desktop --doctor` to check your environment, display server, sandbox permissions, MCP config, disk space, and Cowork readiness.
-- **Desktop integration** — proper `.desktop` entry, icon set (16x16 through 256x256), and `claude://` URL scheme handler.
+```bash
+git clone https://github.com/johnohhh1/claude-desktop-ubuntu.git
+cd claude-desktop-ubuntu
+./build-deb.sh --msix /path/to/Claude.msix
+```
 
-## Cowork Support
+Also accepts `.msixbundle` or `.exe`:
 
-Cowork mode is enabled using the approach from [**johnzfitch/claude-cowork-linux**](https://github.com/johnzfitch/claude-cowork-linux). That project figured out the key insight: on Linux, you don't need the macOS Virtualization.framework VM at all — stub `@ant/claude-swift`, run Claude Code directly on the host, and translate VM paths to host paths.
+```bash
+./build-deb.sh --exe /path/to/Claude-Setup-x64.exe
+```
 
-This deb integrates that approach at build time:
+Output: `dist/claude-desktop_<version>_amd64.deb`
 
-| Step | What happens |
-|:-----|:------------|
-| **Swift stub** | `@ant/claude-swift` is replaced with a JavaScript stub that spawns Claude Code directly |
-| **Platform patch** | The cowork platform gate is patched to return `{status: "supported"}` on Linux |
-| **Path translation** | VM paths (`/sessions/...`) are translated to host paths transparently |
-| **Direct execution** | Claude Code spawns on the host — no QEMU, no Hyper-V, no Virtualization.framework |
-| **Sessions symlink** | `/sessions` is symlinked to `~/.config/Claude/local-agent-mode-sessions/sessions` |
-
-Full credit to **[@johnzfitch](https://github.com/johnzfitch)** for the reverse-engineering work that made this possible. This project would not have Cowork support without [claude-cowork-linux](https://github.com/johnzfitch/claude-cowork-linux).
-
-## Prerequisites
+### Prerequisites
 
 ```bash
 sudo apt-get install -y dpkg-dev nodejs npm python3 file
 ```
 
-You also need a Claude Desktop Windows MSIX bundle. Obtain the official `Claude-Setup-x64.exe` or `.msix` from Anthropic's distribution.
-
-Preferred source artifact:
-
-- **Use a real `.msix` or `.msixbundle` whenever possible.**
-- The Windows `Claude Setup.exe` bootstrapper is not the preferred input for this builder. Anthropic's newer EXE bootstrapper may download the MSIX at install time instead of embedding the full app payload.
-- If you only have the bootstrapper EXE, fetch the real MSIX first or update the builder to resolve Anthropic's download endpoint.
-
-## Build
-
-```bash
-git clone git@github.com:johnohhh1/claude-desktop-ubuntu.git
-cd claude-desktop-ubuntu
-./build-deb.sh --msix /path/to/Claude.msix
-```
-
-Alternative inputs supported by the script:
-
-```bash
-./build-deb.sh --msix /path/to/Claude.msixbundle
-./build-deb.sh --exe /path/to/Claude-Setup-x64.exe
-```
-
-Output lands in `dist/`:
-```
-dist/claude-desktop_<version>_amd64.deb
-```
+**Source artifact note:** Prefer a real `.msix` or `.msixbundle`. Anthropic's newer `.exe` bootstrapper may not embed the full payload.
 
 ## Install
 
 ```bash
-sudo apt-get install ./dist/claude-desktop_<version>_amd64.deb
+sudo apt install ./dist/claude-desktop_<version>_amd64.deb
 ```
 
 ## Launch
@@ -123,19 +72,43 @@ sudo apt-get install ./dist/claude-desktop_<version>_amd64.deb
 claude-desktop
 ```
 
-Or find "Claude" in your application launcher.
+Or find "Claude" in your app launcher.
 
-For native Wayland testing:
+---
 
-```bash
-CLAUDE_USE_WAYLAND=1 claude-desktop
-```
+## Cowork Support
 
-## Environment Variables
+Cowork runs Claude Code in a sandboxed session that can read/write a project folder. On macOS this happens inside a VM. On Linux, we skip the VM entirely — Claude Code runs directly on the host.
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `CLAUDE_USE_WAYLAND` | unset | Set to `1` for native Wayland (disables global hotkeys) |
+This approach comes from [**johnzfitch/claude-cowork-linux**](https://github.com/johnzfitch/claude-cowork-linux), which reverse-engineered the macOS Cowork layer and built JavaScript stubs to replace it. This deb integrates those stubs at build time:
+
+| What | How |
+|:-----|:----|
+| `@ant/claude-swift` | Replaced with a JS stub that spawns Claude Code directly instead of booting a VM |
+| Platform gate | Patched to return `{status: "supported"}` on Linux |
+| VM paths | `/sessions/...` translated to `~/.config/Claude/local-agent-mode-sessions/sessions/...` |
+| `/sessions` symlink | Created by postinst so the path translation works |
+
+Full credit to **[@johnzfitch](https://github.com/johnzfitch)** for figuring this out. This project would not have Cowork without [claude-cowork-linux](https://github.com/johnzfitch/claude-cowork-linux).
+
+---
+
+## Wayland / X11
+
+The launcher auto-detects your display server:
+
+- **Wayland session** — defaults to X11 via XWayland (for global hotkey support)
+- **`CLAUDE_USE_WAYLAND=1`** — forces native Wayland (global hotkeys won't work, but everything else does)
+- **Niri** — auto-detected and forced to native Wayland (no XWayland support)
+- **X11 session** — works as-is
+
+## Launcher Cleanup
+
+On every launch, the script automatically handles:
+
+- **Stale `SingletonLock`** — detects if the locking PID is dead, removes the lock so the app can start
+- **Orphaned `cowork-vm-service` daemons** — kills leftover processes from previous crashes
+- **Stale cowork sockets** — removes dead Unix sockets in `$XDG_RUNTIME_DIR`
 
 ## Diagnostics
 
@@ -143,39 +116,41 @@ CLAUDE_USE_WAYLAND=1 claude-desktop
 claude-desktop --doctor
 ```
 
-Checks: display server, Electron binary, Chrome sandbox permissions, SingletonLock state, MCP config validity, Node.js version, desktop entry, disk space, and orphaned daemons.
+Checks: installed package version, display server, Electron binary, SingletonLock state, MCP config JSON validity, Node.js availability, bubblewrap, and KVM access.
+
+---
 
 ## Known Limitations
 
-- **Computer Use** — the `ComputerUseTcc` handler is not registered on Linux. Anthropic's computer use feature (screen control via Cowork) does not work. This is the same gap on all Linux builds. See [portal-use](https://github.com/johnohhh1/portal-use) for a Wayland-native MCP alternative.
-- **`FileSystem.whichApplication`** — `getAppInfoForFile` is a macOS-specific API; file-association lookups will throw non-fatal errors in logs. Does not affect functionality.
-- **WebGL** — may show "blocklisted" errors on NVIDIA. Non-fatal, app works normally.
-- **Bootstrapper EXE input** — Anthropic's newer Windows bootstrapper may not contain the full MSIX payload, so a direct `.msix` remains the most reliable build input.
+- **Computer Use** — Anthropic's screen control feature (`ComputerUseTcc`) is not registered on Linux. See [portal-use](https://github.com/johnohhh1/portal-use) for a Wayland-native MCP alternative.
+- **`FileSystem.whichApplication`** — macOS-only API; throws non-fatal errors in logs. Doesn't break anything.
+- **WebGL** — may log "blocklisted" on NVIDIA. Non-fatal.
+- **Source artifact** — the Windows `.exe` bootstrapper may not contain the full MSIX payload. Use a `.msix` directly when possible.
 
-## How It Differs From Other Linux Ports
+---
 
-| Project | Approach |
-|---------|----------|
+## How It Differs
+
+| Project | What it does |
+|---------|-------------|
 | [**johnzfitch/claude-cowork-linux**](https://github.com/johnzfitch/claude-cowork-linux) | Original Cowork-on-Linux solution. Extracts from macOS DMG, stubs `@ant/claude-swift`, patches the asar. Standalone install with its own launcher, test suite, and bubblewrap sandboxing. |
-| **This project** | MSIX-to-deb packaging with Wayland launcher, `@ant/claude-native` Linux stub, and claude-cowork-linux's Cowork stubs integrated into a `.deb` package. |
+| **This project** | Takes the Windows MSIX instead, adds a `@ant/claude-native` Linux stub, integrates claude-cowork-linux's Cowork stubs, and packages it all as a `.deb`. |
+
+## Credits
+
+- **[@johnzfitch](https://github.com/johnzfitch)** / [claude-cowork-linux](https://github.com/johnzfitch/claude-cowork-linux) — Cowork stubs, `@ant/claude-swift` replacement, platform gate patch, path translation. MIT licensed.
 
 ## Related Projects
 
-- [claude-cowork-linux](https://github.com/johnzfitch/claude-cowork-linux) — the project that made Cowork on Linux possible
 - [chatgpt_desktop_ubuntu](https://github.com/johnohhh1/chatgpt_desktop_ubuntu) — same MSIX-to-deb approach for ChatGPT Desktop
 - [codex-ubuntu](https://github.com/johnohhh1/codex-ubuntu) — same approach for OpenAI Codex Desktop
 
 ## License
 
-MIT — the build tooling and Linux-specific code in this repo. The Claude Desktop app binary (`app.asar`) is Anthropic's proprietary software and is NOT included in this repository.
+MIT — the build tooling and Linux-specific stubs in this repo.
 
-Cowork stubs are sourced from [claude-cowork-linux](https://github.com/johnzfitch/claude-cowork-linux) (MIT).
-
-## Repo
-
-[github.com/johnohhh1/claude-desktop-ubuntu](https://github.com/johnohhh1/claude-desktop-ubuntu)
-
-Issues and PRs welcome. If a new MSIX version breaks the build, open an issue with the version string.
+The Claude Desktop app binary (`app.asar`) is Anthropic's proprietary software and is not included in this repository. Cowork stubs are from [claude-cowork-linux](https://github.com/johnzfitch/claude-cowork-linux) (MIT).
 
 ---
-*Tested on Ubuntu 26.04 "Noble" with kernel 7.0.0, RTX 5070, NVIDIA driver 580, CUDA 13.0.*
+
+[github.com/johnohhh1/claude-desktop-ubuntu](https://github.com/johnohhh1/claude-desktop-ubuntu) — issues and PRs welcome.
