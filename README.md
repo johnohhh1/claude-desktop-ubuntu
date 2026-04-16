@@ -1,8 +1,7 @@
 <p align="center">
-  <img src="assets/nanoclaw-logo.png" alt="NanoClaw" width="400">
+  <img src="assets/hero.png" alt="Claude Desktop for Ubuntu Linux" width="800">
 </p>
 
----
 # Claude Desktop for Ubuntu Linux
 
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-26.04%20tested-E95420?logo=ubuntu&logoColor=white)](https://ubuntu.com/)
