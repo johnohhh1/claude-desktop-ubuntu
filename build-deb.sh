@@ -166,6 +166,15 @@ fi
 
 if [[ -d "$COWORK_LINUX_DIR/stubs" ]]; then
     # Extract the asar to patch it
+    # First ensure unpacked native files exist (asar extract reads them)
+    mkdir -p "$APP_RESOURCES/app.asar.unpacked/node_modules/@ant/claude-native"
+    touch "$APP_RESOURCES/app.asar.unpacked/node_modules/@ant/claude-native/claude-native-binding.node"
+    # Also handle node-pty unpacked files
+    mkdir -p "$APP_RESOURCES/app.asar.unpacked/node_modules/node-pty/build/Release"
+    for f in pty.node conpty.node conpty_console_list.node; do
+        touch "$APP_RESOURCES/app.asar.unpacked/node_modules/node-pty/build/Release/$f"
+    done
+
     ASAR_EXTRACTED="$SCRIPT_DIR/asar-work"
     rm -rf "$ASAR_EXTRACTED"
     npx --yes @electron/asar extract "$APP_RESOURCES/app.asar" "$ASAR_EXTRACTED"
