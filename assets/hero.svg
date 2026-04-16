@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e07a2f"/>
+      <stop offset="100%" style="stop-color:#d4622a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="900" height="320" rx="12" fill="url(#bg)"/>
+
+  <!-- Subtle grid lines -->
+  <g opacity="0.04" stroke="#ffffff" stroke-width="0.5">
+    <line x1="0" y1="80" x2="900" y2="80"/>
+    <line x1="0" y1="160" x2="900" y2="160"/>
+    <line x1="0" y1="240" x2="900" y2="240"/>
+    <line x1="300" y1="0" x2="300" y2="320"/>
+    <line x1="600" y1="0" x2="600" y2="320"/>
+  </g>
+
+  <!-- Claude asterisk icon -->
+  <g transform="translate(70, 100)" fill="#d4622a" opacity="0.9">
+    <rect x="22" y="0" width="6" height="50" rx="3"/>
+    <rect x="22" y="0" width="6" height="50" rx="3" transform="rotate(45 25 25)"/>
+    <rect x="22" y="0" width="6" height="50" rx="3" transform="rotate(90 25 25)"/>
+    <rect x="22" y="0" width="6" height="50" rx="3" transform="rotate(135 25 25)"/>
+  </g>
+
+  <!-- Title -->
+  <text x="140" y="118" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="36" font-weight="700" fill="#ffffff">Claude Desktop</text>
+  <text x="140" y="155" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="22" font-weight="400" fill="#a0a0b8">for Ubuntu Linux</text>
+
+  <!-- Description -->
+  <text x="140" y="195" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="14" fill="#8888a0">Official MSIX payload repackaged as a native .deb with Wayland support,</text>
+  <text x="140" y="215" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="14" fill="#8888a0">Linux-native stubs, and Cowork mode — no VM required.</text>
+
+  <!-- Feature pills -->
+  <g transform="translate(140, 245)">
+    <!-- Ubuntu -->
+    <rect x="0" y="0" width="120" height="32" rx="16" fill="#e95420"/>
+    <text x="60" y="21" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">Ubuntu 26.04</text>
+
+    <!-- Wayland -->
+    <rect x="132" y="0" width="155" height="32" rx="16" fill="#1793d1"/>
+    <text x="209" y="21" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">Wayland + XWayland</text>
+
+    <!-- Cowork -->
+    <rect x="299" y="0" width="120" height="32" rx="16" fill="#8a2be2"/>
+    <text x="359" y="21" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">Cowork Mode</text>
+
+    <!-- MSIX to .deb -->
+    <rect x="431" y="0" width="120" height="32" rx="16" fill="#2ea44f"/>
+    <text x="491" y="21" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="middle">MSIX to .deb</text>
+  </g>
+</svg>

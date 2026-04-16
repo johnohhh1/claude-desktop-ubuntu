@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hero.png" alt="Claude Desktop for Ubuntu Linux" width="800">
+  <img src="assets/hero.svg" alt="Claude Desktop for Ubuntu Linux" width="900">
 </p>
 
 # Claude Desktop for Ubuntu Linux
