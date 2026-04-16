@@ -45,19 +45,15 @@ Anthropic ships Claude Desktop for macOS and Windows. Linux gets Claude Code (te
 2. Pulls out the `app.asar` (the real app logic — untouched)
 3. Replaces `@ant/claude-native` with a Linux stub that uses Electron's native Linux APIs
 4. Integrates [claude-cowork-linux](https://github.com/johnzfitch/claude-cowork-linux) stubs for Cowork support (`@ant/claude-swift` stub + platform gate patch)
-5. Adds a launcher with full Wayland/X11 detection and XWayland fallback
-6. Patches Electron app metadata with `desktopName=claude-desktop.desktop` so native Wayland is identified correctly by GNOME
-7. Normalizes MSIX unpacked paths such as `%40ant` to `@ant` so native modules resolve correctly on Linux
-8. Adds cleanup logic for stale locks, orphaned cowork daemons, and stale sockets
-9. Includes a `--doctor` diagnostic command
-10. Packages everything as a proper `.deb` — `claude-desktop`
+5. Adds a launcher with Wayland/X11 detection and XWayland fallback
+6. Adds cleanup logic for stale locks, orphaned cowork daemons, and stale sockets
+7. Includes a `--doctor` diagnostic command
+8. Packages everything as a proper `.deb` — `claude-desktop`
 
 ## Features
 
 - **Wayland support** — auto-detects Wayland, falls back to X11 via XWayland for global hotkey support. Set `CLAUDE_USE_WAYLAND=1` for native Wayland mode.
-- **Native Wayland desktop identity fix** — patches Electron `desktopName` so GNOME shows the correct app name and icon instead of generic `electron`.
 - **Niri auto-detection** — compositor with no XWayland support is auto-forced to native Wayland.
-- **Frame Fix patches** — fixes BrowserWindow frame behavior, menu bar visibility, and Linux-specific Electron quirks.
 - **`@ant/claude-native` Linux stub** — replaces the Windows/macOS native module with functional Linux equivalents (progress bar, flash frame, maximize detection) instead of silent no-ops.
 - **Cowork mode** — runs Cowork directly on the host, no VM needed. See [Cowork Support](#cowork-support).
 - **Stale lock cleanup** — automatically removes orphaned SingletonLock files from crashes.
@@ -140,8 +136,6 @@ CLAUDE_USE_WAYLAND=1 claude-desktop
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `CLAUDE_USE_WAYLAND` | unset | Set to `1` for native Wayland (disables global hotkeys) |
-| `CLAUDE_MENU_BAR` | `auto` | `visible`, `hidden`, or `auto` (Alt toggles) |
-| `COWORK_VM_BACKEND` | auto-detect | `bwrap`, `kvm`, or `host` |
 
 ## Diagnostics
 
@@ -149,7 +143,7 @@ CLAUDE_USE_WAYLAND=1 claude-desktop
 claude-desktop --doctor
 ```
 
-Checks: display server, Electron binary, Chrome sandbox permissions, SingletonLock state, MCP config validity, Node.js version, desktop entry, disk space, Cowork isolation backend (bubblewrap/KVM), and orphaned daemons.
+Checks: display server, Electron binary, Chrome sandbox permissions, SingletonLock state, MCP config validity, Node.js version, desktop entry, disk space, and orphaned daemons.
 
 ## Known Limitations
 
@@ -163,7 +157,7 @@ Checks: display server, Electron binary, Chrome sandbox permissions, SingletonLo
 | Project | Approach |
 |---------|----------|
 | [**johnzfitch/claude-cowork-linux**](https://github.com/johnzfitch/claude-cowork-linux) | Original Cowork-on-Linux solution. Extracts from macOS DMG, stubs `@ant/claude-swift`, patches the asar. Standalone install with its own launcher, test suite, and bubblewrap sandboxing. |
-| **This project** | MSIX-to-deb packaging with Wayland launcher, Frame Fix patches, `@ant/claude-native` Linux stub, and claude-cowork-linux's Cowork stubs integrated into a `.deb` package. |
+| **This project** | MSIX-to-deb packaging with Wayland launcher, `@ant/claude-native` Linux stub, and claude-cowork-linux's Cowork stubs integrated into a `.deb` package. |
 
 ## Related Projects
 
