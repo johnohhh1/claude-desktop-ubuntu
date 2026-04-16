@@ -16,6 +16,10 @@ staging/
 # Electron distribution
 node_modules/
 
+# Cowork stubs (cloned at build time from github.com/johnzfitch/claude-cowork-linux)
+cowork-linux/
+asar-work/
+
 # OS
 .DS_Store
 Thumbs.db

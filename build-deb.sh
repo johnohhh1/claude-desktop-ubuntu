@@ -121,6 +121,8 @@ APP_RESOURCES="$ELECTRON_DIR/dist/resources"
 # Copy the app.asar from extracted MSIX
 if [[ -f "$EXTRACT_DIR/resources/app.asar" ]]; then
     cp "$EXTRACT_DIR/resources/app.asar" "$APP_RESOURCES/app.asar"
+elif [[ -f "$EXTRACT_DIR/app/resources/app.asar" ]]; then
+    cp "$EXTRACT_DIR/app/resources/app.asar" "$APP_RESOURCES/app.asar"
 elif [[ -f "$EXTRACT_DIR/app.asar" ]]; then
     cp "$EXTRACT_DIR/app.asar" "$APP_RESOURCES/app.asar"
 else
@@ -129,7 +131,7 @@ else
 fi
 
 # Copy app.asar.unpacked if it exists
-for dir in "$EXTRACT_DIR/resources/app.asar.unpacked" "$EXTRACT_DIR/app.asar.unpacked"; do
+for dir in "$EXTRACT_DIR/resources/app.asar.unpacked" "$EXTRACT_DIR/app/resources/app.asar.unpacked" "$EXTRACT_DIR/app.asar.unpacked"; do
     if [[ -d "$dir" ]]; then
         cp -r "$dir" "$APP_RESOURCES/app.asar.unpacked"
         break
@@ -142,9 +144,60 @@ mkdir -p "$NATIVE_DIR"
 cp "$SRC_DIR/claude-native-linux.js" "$NATIVE_DIR/index.js"
 
 # Copy locale/resource files from extracted MSIX if present
-for f in "$EXTRACT_DIR/resources/"*.json; do
-    [[ -f "$f" ]] && cp "$f" "$APP_RESOURCES/" 2>/dev/null || true
+for dir in "$EXTRACT_DIR/resources" "$EXTRACT_DIR/app/resources"; do
+    for f in "$dir"/*.json; do
+        [[ -f "$f" ]] && cp "$f" "$APP_RESOURCES/" 2>/dev/null || true
+    done
 done
+
+#-------------------------------------------------------------------------------
+# Step 4b: Integrate Cowork support (from claude-cowork-linux)
+#-------------------------------------------------------------------------------
+echo "[4b/6] Integrating Cowork support..."
+# Credit: https://github.com/johnzfitch/claude-cowork-linux
+# This stubs @ant/claude-swift and patches the platform gate so Cowork works
+# directly on Linux without a VM.
+
+COWORK_LINUX_DIR="$SCRIPT_DIR/cowork-linux"
+if [[ ! -d "$COWORK_LINUX_DIR" ]]; then
+    echo "  Cloning claude-cowork-linux for stubs..."
+    git clone --depth 1 https://github.com/johnzfitch/claude-cowork-linux.git "$COWORK_LINUX_DIR" 2>/dev/null || true
+fi
+
+if [[ -d "$COWORK_LINUX_DIR/stubs" ]]; then
+    # Extract the asar to patch it
+    ASAR_EXTRACTED="$SCRIPT_DIR/asar-work"
+    rm -rf "$ASAR_EXTRACTED"
+    npx --yes @electron/asar extract "$APP_RESOURCES/app.asar" "$ASAR_EXTRACTED"
+
+    # Install the @ant/claude-swift stub
+    SWIFT_STUB_DEST="$ASAR_EXTRACTED/node_modules/@ant/claude-swift"
+    mkdir -p "$SWIFT_STUB_DEST/build/Release"
+    cp -r "$COWORK_LINUX_DIR/stubs/@ant/claude-swift/js/"* "$SWIFT_STUB_DEST/"
+    echo '{"name":"@ant/claude-swift","main":"index.js"}' > "$SWIFT_STUB_DEST/package.json"
+
+    # Install cowork stubs
+    COWORK_STUB_DEST="$ASAR_EXTRACTED/cowork"
+    mkdir -p "$COWORK_STUB_DEST"
+    cp "$COWORK_LINUX_DIR/stubs/cowork/"*.js "$COWORK_STUB_DEST/" 2>/dev/null || true
+    cp "$COWORK_LINUX_DIR/stubs/cowork/"*.sh "$COWORK_STUB_DEST/" 2>/dev/null || true
+
+    # Patch index.js to enable Cowork on Linux
+    if [[ -f "$COWORK_LINUX_DIR/enable-cowork.py" ]]; then
+        python3 "$COWORK_LINUX_DIR/enable-cowork.py" "$ASAR_EXTRACTED/.vite/build/index.js" \
+            && echo "  Cowork platform gate patched" \
+            || echo "  Warning: Cowork patch failed (may need manual update)"
+    fi
+
+    # Repack the asar
+    npx --yes @electron/asar pack "$ASAR_EXTRACTED" "$APP_RESOURCES/app.asar" \
+        --unpack '{*.node,*.dll,*.exe}' \
+        --unpack-dir 'node_modules/@ant/{claude-native,claude-swift}'
+    rm -rf "$ASAR_EXTRACTED"
+    echo "  Cowork stubs installed"
+else
+    echo "  Warning: claude-cowork-linux stubs not found, Cowork will not be available"
+fi
 
 # Copy launcher scripts
 mkdir -p "$STAGING_DIR/usr/bin"
@@ -191,11 +244,22 @@ Description: Claude Desktop for Linux
  stub, and comprehensive diagnostic tooling.
 EOF
 
-# Post-install: update desktop database
+# Post-install: update desktop database and set up Cowork paths
 cat > "$STAGING_DIR/DEBIAN/postinst" << 'EOF'
 #!/bin/bash
 update-desktop-database /usr/share/applications 2>/dev/null || true
 gtk-update-icon-cache /usr/share/icons/hicolor 2>/dev/null || true
+
+# Cowork requires /sessions symlink
+# (maps VM paths to host paths — from claude-cowork-linux)
+REAL_USER="${SUDO_USER:-$USER}"
+REAL_HOME=$(getent passwd "$REAL_USER" | cut -d: -f6)
+SESSIONS_TARGET="$REAL_HOME/.config/Claude/local-agent-mode-sessions/sessions"
+if [[ ! -e /sessions ]] && [[ -n "$REAL_HOME" ]]; then
+    mkdir -p "$SESSIONS_TARGET"
+    ln -sf "$SESSIONS_TARGET" /sessions
+    echo "Created /sessions -> $SESSIONS_TARGET"
+fi
 EOF
 chmod 755 "$STAGING_DIR/DEBIAN/postinst"
 
